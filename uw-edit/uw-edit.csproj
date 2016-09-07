@@ -31,6 +31,7 @@
     <Compile Include="Views\MainViewModel.cs" />
     <Compile Include="UserControls\MainViewMenu.cs" />
     <Compile Include="Program.cs" />
+    <Compile Include="UserControls\MainViewStrip.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Windows.Forms" />
@@ -45,4 +46,7 @@
     <Exec Condition="'$(OS)'=='Windows_NT'" Command="copy /Y /B packages.Windows packages.config" />
     <Exec Condition="'$(OS)'!='Windows_NT'" Command="cat packages.Linux &gt;packages.config" />
   </Target>
+  <ItemGroup>
+    <Folder Include="Resources\" />
+  </ItemGroup>
 </Project>

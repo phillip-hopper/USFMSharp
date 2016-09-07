@@ -24,6 +24,8 @@ namespace uw_edit.Views
         {
             SuspendLayout();
 
+			Font = new Font(Font.FontFamily, 10);
+
             // layout the form
             AutoScaleDimensions = new SizeF(6F, 13F);
             AutoScaleMode = AutoScaleMode.Font;
@@ -31,9 +33,17 @@ namespace uw_edit.Views
             Name = "MainForm";
             Text = "tx-Edit";
 
+			// tool strip
+			var toolStrip = new MainViewStrip();
+			toolStrip.Font = new Font(Font.FontFamily, 12);
+
+			Controls.Add(toolStrip);
+
             // main menu
             var menuStrip = new MainViewMenu();
             menuStrip.MenuExitClicked += HandleMenuExitClicked;
+			menuStrip.Font = Font;
+			menuStrip.Dock = DockStyle.Top;
             Controls.Add(menuStrip);
             MainMenuStrip = menuStrip;
 
