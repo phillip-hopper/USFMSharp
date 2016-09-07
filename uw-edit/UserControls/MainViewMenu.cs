@@ -5,14 +5,19 @@ namespace uw_edit.UserControls
 {
     public class MainViewMenu : MenuStrip
     {
-        public event EventHandler MenuExitClicked;
+		public enum MainMenuOption
+		{
+			FileExit
+		}
+
+        public event EventHandler<MainMenuClickEventArgs> MenuItemClicked;
 
         public MainViewMenu()
         {
             InitializeMenu();
         }
 
-        private void InitializeMenu()
+        void InitializeMenu()
         {
             SuspendLayout();
 
@@ -21,7 +26,7 @@ namespace uw_edit.UserControls
 
             // file menu sub-items
             var fileExitMenu = new ToolStripMenuItem("E&xit");
-            fileExitMenu.Click += FileExitMenuOnClick;
+			fileExitMenu.Click += (sender, e) => MenuItemClicked?.Invoke(this, new MainMenuClickEventArgs(MainMenuOption.FileExit));
 
             // build the main menu
             fileMenu.DropDownItems.AddRange(new ToolStripItem[] {fileExitMenu});
@@ -31,10 +36,15 @@ namespace uw_edit.UserControls
 
             ResumeLayout(true);
         }
-
-        private void FileExitMenuOnClick(object sender, EventArgs eventArgs)
-        {
-            MenuExitClicked?.Invoke(this, eventArgs);
-        }
     }
+
+	public class MainMenuClickEventArgs : EventArgs
+	{
+		public MainViewMenu.MainMenuOption ItemClicked;
+
+		public MainMenuClickEventArgs(MainViewMenu.MainMenuOption itemClicked)
+		{
+			ItemClicked = itemClicked;
+		}
+	}
 }

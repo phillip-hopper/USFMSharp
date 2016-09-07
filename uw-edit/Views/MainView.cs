@@ -8,19 +8,20 @@ namespace uw_edit.Views
 {
     public class MainView : Form
     {
-        private MainViewModel _model;
+        MainViewModel _model;
 
         public MainView(MainViewModel model)
         {
+			_model = model;
+			_model.ExitProgram += _model_ExitProgram;
+
             InitializeForm();
 
             Load += HandleLoad;
             Closing += HandleClosing;
-
-            _model = model;
         }
 
-        private void InitializeForm()
+        void InitializeForm()
         {
             SuspendLayout();
 
@@ -35,13 +36,14 @@ namespace uw_edit.Views
 
 			// tool strip
 			var toolStrip = new MainViewStrip();
+			toolStrip.StripItemClicked += _model.HandleStripItemClicked;
 			toolStrip.Font = new Font(Font.FontFamily, 12);
 
 			Controls.Add(toolStrip);
 
             // main menu
             var menuStrip = new MainViewMenu();
-            menuStrip.MenuExitClicked += HandleMenuExitClicked;
+            menuStrip.MenuItemClicked += _model.HandleMenuItemClicked;
 			menuStrip.Font = Font;
 			menuStrip.Dock = DockStyle.Top;
             Controls.Add(menuStrip);
@@ -62,25 +64,25 @@ namespace uw_edit.Views
 
         #region Form Events
 
-        private void HandleClosing(object sender, CancelEventArgs cancelEventArgs)
+        void HandleClosing(object sender, CancelEventArgs cancelEventArgs)
         {
 //            throw new NotImplementedException();
         }
 
-        private void HandleLoad(object sender, EventArgs eventArgs)
+        void HandleLoad(object sender, EventArgs eventArgs)
         {
 //            throw new NotImplementedException();
         }
 
-        #endregion
+		#endregion
 
-        #region Control Events
+		#region Control Events
 
-        private void HandleMenuExitClicked(object sender, EventArgs eventArgs)
-        {
-            Close();
-        }
+		void _model_ExitProgram(object sender, EventArgs e)
+		{
+			Close();
+		}
 
-        #endregion
-    }
+		#endregion
+	}
 }
