@@ -18,6 +18,8 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
+    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+    <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <Optimize>true</Optimize>
@@ -25,6 +27,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
+    <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Views\MainView.cs" />
@@ -32,21 +35,41 @@
     <Compile Include="UserControls\MainViewMenu.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="UserControls\MainViewStrip.cs" />
+    <Compile Include="SIL\PlatformUtilities\Platform.cs" />
+    <Compile Include="UserControls\Browser.cs" />
+    <Compile Include="USFM\TextTools.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System" />
     <Reference Include="System.Drawing" />
+    <Reference Include="Geckofx-Core">
+      <HintPath>..\packages\Geckofx45.45.0.20\lib\net40\Geckofx-Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Geckofx-Winforms">
+      <HintPath>..\packages\Geckofx45.45.0.20\lib\net40\Geckofx-Winforms.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="Resources\USFMTemplate.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Target Name="SelectTargetsConfig">
     <Exec Condition="'$(OS)'=='Windows_NT'" Command="copy /Y /B packages.Windows packages.config" />
     <Exec Condition="'$(OS)'!='Windows_NT'" Command="cat packages.Linux &gt;packages.config" />
   </Target>
+  <Target Name="BeforeBuild" Condition="'$(OS)'=='Windows_NT'">
+    <Exec Command="mkdir $(OutDir)Firefox" Condition="!Exists('$(OutDir)Firefox')" />
+    <Exec Command="copy /Y $(SolutionDir)packages\Geckofx45.45.0.20\content\Firefox\*.* $(OutDir)Firefox" />
+  </Target>
   <ItemGroup>
     <Folder Include="Resources\" />
+    <Folder Include="SIL\" />
+    <Folder Include="SIL\PlatformUtilities\" />
+    <Folder Include="USFM\" />
   </ItemGroup>
 </Project>

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Drawing;
+using System.IO;
 using System.Windows.Forms;
 using uw_edit.UserControls;
 
@@ -19,6 +20,10 @@ namespace uw_edit.Views
 
             Load += HandleLoad;
             Closing += HandleClosing;
+
+
+			var html = File.ReadAllText(Path.Combine(Program.GetResourcesDirectory(), "USFMTemplate.html"));
+			_model.Browser.WebBrowser.LoadHtml(html);
         }
 
         void InitializeForm()
@@ -33,6 +38,9 @@ namespace uw_edit.Views
             ClientSize = new Size(600, 500);
             Name = "MainForm";
             Text = "tx-Edit";
+
+			// browser
+			Controls.Add(_model.Browser);
 
 			// tool strip
 			var toolStrip = new MainViewStrip();

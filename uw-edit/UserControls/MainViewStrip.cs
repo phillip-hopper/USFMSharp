@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows.Forms;
 
-namespace uw_edit
+namespace uw_edit.UserControls
 {
 	public class MainViewStrip : ToolStrip
 	{
