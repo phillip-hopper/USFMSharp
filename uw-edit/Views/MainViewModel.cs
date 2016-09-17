@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Windows.Forms;
 using Gecko;
 using uw_edit.UserControls;
@@ -12,12 +13,32 @@ namespace uw_edit.Views
 
 		public Browser Browser { get; set; }
 
+        private string _fileToOpen;
+
 		public MainViewModel()
 		{
-			Browser = new Browser();
-			Browser.Dock = DockStyle.Fill;
-			Browser.DocumentCompleted += Browser_DocumentCompleted;
+		    Browser = new Browser {Dock = DockStyle.Fill};
+		    Browser.DocumentCompleted += Browser_DocumentCompleted;
 		}
+
+        public string FileToOpen
+        {
+            get { return _fileToOpen; }
+            set
+            {
+                // process a relative path
+                if (value.StartsWith(".", StringComparison.Ordinal))
+                    value = Path.GetFullPath(Path.Combine(Program.GetAppDirectory(), value));
+
+                _fileToOpen = value;
+            }
+        }
+
+        public void LoadTemplate()
+        {
+            var html = File.ReadAllText(Path.Combine(Program.GetResourcesDirectory(), "USFMTemplate.html"));
+            Browser.WebBrowser.LoadHtml(html);           
+        }
 
 		#region Event Handlers
 
@@ -36,24 +57,31 @@ namespace uw_edit.Views
 			switch (eventArgs.ItemClicked)
 			{
 				case MainViewStrip.MainStripOption.Chapter:
-					var sel = TextTools.GetSelection(Browser.WebBrowser);
-					Console.Out.WriteLine(sel);
+					Browser.InsertTag("\\c ", " ");
 					break;
 
 				case MainViewStrip.MainStripOption.Verse:
+					Browser.InsertText("\\v ");
 					break;
 					
 				case MainViewStrip.MainStripOption.Paragraph:
-					ExitProgram?.Invoke(this, eventArgs);
+					//ExitProgram?.Invoke(this, eventArgs);
+					//nsIDOMWindowUtils utils = Xpcom.QueryInterface<nsIDOMWindowUtils>(Browser.WebBrowser.Window.DomWindow);
+					nsIDOMWindowUtils utils = Xpcom.QueryInterface<nsIDOMWindowUtils>(Browser.WebBrowser.Window.DomWindow);
+					Browser.WebBrowser.Window.WindowUtils.SendKeyEvent("keypress", 0, 102, 0, false);
 					return;
 			}
 		}
 
-		void Browser_DocumentCompleted(object sender, Gecko.Events.GeckoDocumentCompletedEventArgs e)
+        private void Browser_DocumentCompleted(object sender, Gecko.Events.GeckoDocumentCompletedEventArgs e)
 		{
-			var doc = Browser.WebBrowser.Document;
-			var found = (GeckoHtmlElement)doc.GetElementById("usfm-content");
-			//found.InnerHtml = "there";
+			// if a file name was passed as a command-line parameter, load it now
+			if (!string.IsNullOrEmpty(FileToOpen))
+			{
+				TextTools.SetUsfmFromFile(Browser.WebBrowser, FileToOpen);
+			    Browser.RunJavascript("usfmContent.focus(); markUsfmTags();");
+				FileToOpen = string.Empty;
+			}
 		}
 
 		#endregion

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Windows.Forms;
@@ -11,11 +12,11 @@ namespace uw_edit
 {
 	public static class Program
 	{
-		static string _appDirectory;
+	    private static string _appDirectory;
 
 		/// <summary>The main entry point for the application.</summary>
 		[STAThread]
-		static void Main()
+		private static void Main()
 		{
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault(false);
@@ -27,7 +28,13 @@ namespace uw_edit
 				Xpcom.Shutdown();
 			};
 
-			Application.Run(new MainView(new MainViewModel()));
+		    var viewModel = new MainViewModel();
+
+		    var args = Environment.GetCommandLineArgs();
+		    if (args.Length > 1)
+		        viewModel.FileToOpen = args[1];
+
+			Application.Run(new MainView(viewModel));
 		}
 
 		public static string GetAppDirectory()

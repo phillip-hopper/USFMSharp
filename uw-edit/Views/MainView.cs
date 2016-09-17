@@ -4,12 +4,13 @@ using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
 using uw_edit.UserControls;
+using uw_edit.USFM;
 
 namespace uw_edit.Views
 {
     public class MainView : Form
     {
-        MainViewModel _model;
+        private readonly MainViewModel _model;
 
         public MainView(MainViewModel model)
         {
@@ -21,12 +22,12 @@ namespace uw_edit.Views
             Load += HandleLoad;
             Closing += HandleClosing;
 
+            _model.LoadTemplate();
 
-			var html = File.ReadAllText(Path.Combine(Program.GetResourcesDirectory(), "USFMTemplate.html"));
-			_model.Browser.WebBrowser.LoadHtml(html);
+
         }
 
-        void InitializeForm()
+        private void InitializeForm()
         {
             SuspendLayout();
 
@@ -72,12 +73,12 @@ namespace uw_edit.Views
 
         #region Form Events
 
-        void HandleClosing(object sender, CancelEventArgs cancelEventArgs)
+        private void HandleClosing(object sender, CancelEventArgs cancelEventArgs)
         {
 //            throw new NotImplementedException();
         }
 
-        void HandleLoad(object sender, EventArgs eventArgs)
+        private void HandleLoad(object sender, EventArgs eventArgs)
         {
 //            throw new NotImplementedException();
         }
@@ -86,7 +87,7 @@ namespace uw_edit.Views
 
 		#region Control Events
 
-		void _model_ExitProgram(object sender, EventArgs e)
+        private void _model_ExitProgram(object sender, EventArgs e)
 		{
 			Close();
 		}

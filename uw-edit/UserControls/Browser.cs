@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Windows.Forms;
 using Gecko;
@@ -104,7 +105,40 @@ namespace uw_edit.UserControls
 			GeckoPreferences.User["mousewheel.with_control.action"] = 0;
 		}
 
+		/// <summary>
+		/// Inserts text into the browser at the current cursor location
+		/// </summary>
+		/// <param name="text">The text to insert</param>
+		public void InsertText(string text)
+		{
+			nsIDOMWindowUtils utils = Xpcom.QueryInterface<nsIDOMWindowUtils>(WebBrowser.Window.DomWindow);
 
+			foreach (var c in text)
+			{
+				WebBrowser.Window.WindowUtils.SendKeyEvent("keypress", 0, c, 0, false);
+			}
+		}
+
+		public void InsertTag(string tagText, string followedBy = "")
+		{
+			InsertText("<pre class=\"tag red\">" + tagText + "</pre>" + followedBy);
+			RunJavascript("markUsfmTags();");
+		}
+
+		/// <summary>
+		/// Runs the javascript, and returns the result
+		/// </summary>
+		/// <returns>The return value of the script, as a string</returns>
+		/// <param name="javaScript">The JavaScript fragment to run</param>
+		public string RunJavascript(string javaScript)
+		{
+			using (var context = new AutoJSContext(WebBrowser.Window))
+			{
+				string result;
+				context.EvaluateScript(javaScript, (nsISupports)WebBrowser.Document.DomObject, out result);
+				return result;
+			}
+		}
 
 		//void _browser_DocumentCompleted(object sender,  e)
 		//{
@@ -113,6 +147,11 @@ namespace uw_edit.UserControls
 
 		//	Console.Out.WriteLine("here");
 		//}
+
+		void SpiderMonkey_JSErrorReportCallback(IntPtr cx, string message, IntPtr report)
+		{
+			Console.Out.WriteLine(message);
+		}
 	}
 }
 

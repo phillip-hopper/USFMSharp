@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="RIDER_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$USER_HOME$/AppData/Local/Symbols/src/Source/01586.00/Source/ndp/clr/src/BCL/system/io/path.cs">
+      <sourceFolder url="file://$USER_HOME$/AppData/Local/Symbols/src/Source/01586.00/Source/ndp/clr/src/BCL/system/io/path.cs" isTestSource="false" />
+    </content>
+    <content url="file://$MODULE_DIR$/..">
+      <sourceFolder url="file://$MODULE_DIR$/.." isTestSource="false" />
+    </content>
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>
