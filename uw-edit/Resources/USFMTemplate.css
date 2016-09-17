@@ -1,0 +1,15 @@
+body {margin: 0;}
+#usfm-content {
+    display: inline-block;
+    font-family: sans-serif;
+    font-size: 16px;
+    box-sizing: border-box;
+    padding: 10px;
+    overflow-y: auto;
+    width: 100%;
+    height: calc(100vh - 4px);
+    white-space: pre-wrap;
+    outline: 0;
+}
+.tag { font-weight: 700; }
+.usfmTag { color: #22e; font-weight: 700; }

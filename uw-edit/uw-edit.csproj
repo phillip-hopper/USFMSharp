@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -71,5 +71,10 @@
     <Folder Include="SIL\" />
     <Folder Include="SIL\PlatformUtilities\" />
     <Folder Include="USFM\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Resources\USFMTemplate.css" />
+    <Content Include="Resources\USFMTemplate.js" />
+    <Content Include="Resources\USFMTemplate.usfm" />
   </ItemGroup>
 </Project>
