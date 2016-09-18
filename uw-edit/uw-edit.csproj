@@ -73,8 +73,14 @@
     <Folder Include="USFM\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Resources\USFMTemplate.css" />
-    <Content Include="Resources\USFMTemplate.js" />
-    <Content Include="Resources\USFMTemplate.usfm" />
+    <Content Include="Resources\USFMTemplate.css">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\USFMTemplate.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\USFMTemplate.usfm">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 </Project>

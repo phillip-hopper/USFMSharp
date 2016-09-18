@@ -37,7 +37,15 @@ namespace uw_edit.Views
         public void LoadTemplate()
         {
             var html = File.ReadAllText(Path.Combine(Program.GetResourcesDirectory(), "USFMTemplate.html"));
-            Browser.WebBrowser.LoadHtml(html);           
+			var css = File.ReadAllText(Path.Combine(Program.GetResourcesDirectory(), "USFMTemplate.css"));
+			var js = File.ReadAllText(Path.Combine(Program.GetResourcesDirectory(), "USFMTemplate.js"));
+            html = html.Replace("</head>", "<style>\r\n" + css + "</style>\r\n<script type=\"text/javascript\">\r\n" + js + "</script>\r\n</head>");
+
+			// if no usfm file was selected when starting, open the default template
+            if (string.IsNullOrEmpty(FileToOpen))
+			    FileToOpen = Path.Combine(Program.GetResourcesDirectory(), "USFMTemplate.usfm");
+
+            Browser.WebBrowser.LoadHtml(html);
         }
 
 		#region Event Handlers

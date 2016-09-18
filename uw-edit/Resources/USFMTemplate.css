@@ -12,4 +12,5 @@ body {margin: 0;}
     outline: 0;
 }
 .tag { font-weight: 700; }
-.usfmTag { color: #22e; font-weight: 700; }
+.usfmTag { color: #22c; font-weight: 700; }
+.unknownTag { color: #c22; font-weight: 700; }

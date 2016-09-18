@@ -19,4 +19,3 @@ namespace uw_edit.USFM
 		}
 	}
 }
-
