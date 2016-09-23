@@ -30,16 +30,30 @@
     <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Views\MainView.cs" />
-    <Compile Include="Views\MainViewModel.cs" />
-    <Compile Include="UserControls\MainViewMenu.cs" />
+    <Compile Include="Views\MainView.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Views\MainViewModel.cs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Compile>
+    <Compile Include="UserControls\MainViewMenu.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Program.cs" />
-    <Compile Include="UserControls\MainViewStrip.cs" />
+    <Compile Include="UserControls\MainViewStrip.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="SIL\PlatformUtilities\Platform.cs" />
-    <Compile Include="UserControls\Browser.cs" />
+    <Compile Include="UserControls\Browser.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="USFM\TextTools.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="AjaxMin, Version=5.14.5506.26196, Culture=neutral, PublicKeyToken=21ef50ce11b5d80f, processorArchitecture=MSIL">
+      <HintPath>..\packages\AjaxMin.5.14.5506.26202\lib\net40\AjaxMin.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System" />
     <Reference Include="System.Drawing" />
@@ -56,6 +70,18 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />
+    <None Include="Resources\jquery.slim.min.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Resources\USFMTemplate.css">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Resources\USFMTemplate.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Resources\USFMTemplate.usfm">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Target Name="SelectTargetsConfig">
@@ -66,21 +92,5 @@
     <Exec Command="mkdir $(OutDir)Firefox" Condition="!Exists('$(OutDir)Firefox')" />
     <Exec Command="copy /Y $(SolutionDir)packages\Geckofx45.45.0.20\content\Firefox\*.* $(OutDir)Firefox" />
   </Target>
-  <ItemGroup>
-    <Folder Include="Resources\" />
-    <Folder Include="SIL\" />
-    <Folder Include="SIL\PlatformUtilities\" />
-    <Folder Include="USFM\" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Resources\USFMTemplate.css">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Resources\USFMTemplate.js">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Resources\USFMTemplate.usfm">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
+  <ItemGroup />
 </Project>

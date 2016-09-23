@@ -36,10 +36,24 @@ namespace uw_edit.Views
 
         public void LoadTemplate()
         {
-            var html = File.ReadAllText(Path.Combine(Program.GetResourcesDirectory(), "USFMTemplate.html"));
+            var minifier = new Microsoft.Ajax.Utilities.Minifier();
+
+			// add our usfm stylesheet
 			var css = File.ReadAllText(Path.Combine(Program.GetResourcesDirectory(), "USFMTemplate.css"));
+			//css = minifier.MinifyStyleSheet(css);
+			var s = "<style>\r\n" + css + "</style>\r\n";
+
+			// add jquery
+			s += "<script type=\"text/javascript\">\r\n" + File.ReadAllText(Path.Combine(Program.GetResourcesDirectory(), "jquery.slim.min.js")) + "</script>\r\n";
+
+			// add our javascript
 			var js = File.ReadAllText(Path.Combine(Program.GetResourcesDirectory(), "USFMTemplate.js"));
-            html = html.Replace("</head>", "<style>\r\n" + css + "</style>\r\n<script type=\"text/javascript\">\r\n" + js + "</script>\r\n</head>");
+			//js = minifier.MinifyJavaScript(js);
+			s += "<script type=\"text/javascript\">\r\n" + js + "</script>\r\n";
+
+			// put it all together
+			var html = File.ReadAllText(Path.Combine(Program.GetResourcesDirectory(), "USFMTemplate.html"));
+            html = html.Replace("</head>", s + "</head>");
 
 			// if no usfm file was selected when starting, open the default template
             if (string.IsNullOrEmpty(FileToOpen))
