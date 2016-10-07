@@ -88,32 +88,36 @@ namespace uw_edit.Views
 
         private void TimerOnElapsed(object sender, ElapsedEventArgs elapsedEventArgs)
         {
-			RichText.Invoke((MethodInvoker)delegate ()
+			RichText.Invoke((MethodInvoker)delegate () 
 			{
-				RichTextImage.Invoke((MethodInvoker)delegate ()
-				{
-					try
+					RichTextImage.Invoke((MethodInvoker)delegate ()
 					{
-						RichText.TextChanged -= RichTextOnTextChanged;
+							try
+							{
+								RichText.TextChanged -= RichTextOnTextChanged;
 
-						// do this to avoid flicker
-						Rectangle sourceRect = RichText.ClientRectangle;
-						Size targetSize = RichText.Size;
-						using (Bitmap tmp = new Bitmap(sourceRect.Width, sourceRect.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb))
-						{
-							RichText.DrawToBitmap(tmp, sourceRect);
-							RichTextImage.Image = tmp;
-							RichTextImage.Visible = true;
-						}
+								// do this to avoid flicker
+								Rectangle sourceRect = RichText.ClientRectangle;
+								Size targetSize = RichText.Size;
+								using (Bitmap tmp = new Bitmap(sourceRect.Width, sourceRect.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb))
+								{
+									RichText.DrawToBitmap(tmp, sourceRect);
+									RichTextImage.Image = tmp;
+									RichTextImage.Visible = true;
+								}
 
-						TextTools.MarkupUSFM(RichText);
-					}
-					finally
-					{
-						RichTextImage.Visible = false;
-						RichText.TextChanged += RichTextOnTextChanged;
-					}
-				});
+								TextTools.MarkupUSFM(RichText);
+							}
+							catch (Exception e) 
+							{
+								MessageBox.Show(e.ToString());
+							}
+							finally
+							{
+								RichTextImage.Visible = false;
+								RichText.TextChanged += RichTextOnTextChanged;
+							}
+					});
 			});
         }
 

@@ -64,16 +64,16 @@ namespace uw_edit.USFM
 			foreach (Match match in matches)
 			{
 				richText.SelectionStart = match.Index;
-				richText.SelectionLength = match.Length;
+				richText.SelectionLength = match.Value.TrimEnd().Length;
 				richText.SelectionColor = Color.Red;
 			}
-
+				
 			// mark the known tags
 			matches = _knownTagsRe.Matches(richText.Text);
 			foreach (Match match in matches)
 			{
 				richText.SelectionStart = match.Index;
-				richText.SelectionLength = match.Length;
+				richText.SelectionLength = match.Value.TrimEnd().Length;
 				richText.SelectionColor = Color.Blue;
 			}
 
