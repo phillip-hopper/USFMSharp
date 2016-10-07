@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="RIDER_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$/../..">
+      <sourceFolder url="file://$MODULE_DIR$/../../uw-edit-tests" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../uw-edit" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/../../packages" />
+      <excludeFolder url="file://$MODULE_DIR$/../../uw-edit-tests/bin" />
+      <excludeFolder url="file://$MODULE_DIR$/../../uw-edit-tests/obj" />
+      <excludeFolder url="file://$MODULE_DIR$/../../uw-edit/bin" />
+      <excludeFolder url="file://$MODULE_DIR$/../../uw-edit/obj" />
+    </content>
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>

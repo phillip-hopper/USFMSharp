@@ -1,10 +1,8 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Drawing;
-using System.IO;
 using System.Windows.Forms;
 using uw_edit.UserControls;
-using uw_edit.USFM;
 
 namespace uw_edit.Views
 {
@@ -23,8 +21,6 @@ namespace uw_edit.Views
             Closing += HandleClosing;
 
             _model.LoadTemplate();
-
-
         }
 
         private void InitializeForm()
@@ -40,8 +36,12 @@ namespace uw_edit.Views
             Name = "MainForm";
             Text = "tx-Edit";
 
-			// browser
-			Controls.Add(_model.Browser);
+			// editor image
+			Controls.Add(_model.RichTextImage);
+
+			// editor control
+            _model.RichText.Font = new Font(Font.FontFamily, 12);
+            Controls.Add(_model.RichText);
 
 			// tool strip
 			var toolStrip = new MainViewStrip();

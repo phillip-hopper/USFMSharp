@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Windows.Forms;
-using Gecko;
 using SIL.PlatformUtilities;
-using uw_edit.UserControls;
 using uw_edit.Views;
 
 namespace uw_edit
@@ -20,13 +17,6 @@ namespace uw_edit
 		{
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault(false);
-
-			Browser.SetUpXulRunner();
-
-			Application.ApplicationExit += (sender, e) =>
-			{
-				Xpcom.Shutdown();
-			};
 
 		    var viewModel = new MainViewModel();
 
