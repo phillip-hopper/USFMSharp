@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
+using System.Text;
 using System.Windows.Forms;
 using SIL.PlatformUtilities;
 using uw_edit.Views;
@@ -44,6 +45,11 @@ namespace uw_edit
 		public static string GetResourcesDirectory()
 		{
 			return Path.Combine(GetAppDirectory(), "Resources");
+		}
+
+		public static string GetTextResource(string resourceFileName)
+		{
+			return File.ReadAllText(Path.Combine(Program.GetResourcesDirectory(), resourceFileName), Encoding.UTF8);
 		}
 	}
 }

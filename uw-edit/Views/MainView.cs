@@ -15,7 +15,11 @@ namespace uw_edit.Views
 			_model = model;
 			_model.ExitProgram += _model_ExitProgram;
 
+			Application.UseWaitCursor = true;
+
             InitializeForm();
+
+			Application.UseWaitCursor = false;
 
             Load += HandleLoad;
             Closing += HandleClosing;

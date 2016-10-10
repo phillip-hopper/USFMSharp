@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Timers;
 using System.Windows.Forms;
@@ -16,15 +17,13 @@ namespace uw_edit.Views
 		public PictureBox RichTextImage { get; set; }
 
         private string _fileToOpen;
-        private readonly System.Timers.Timer _timer;
+        private System.Timers.Timer _timer;
 
 		public MainViewModel()
 		{
 			RichTextImage = new PictureBox { Dock = DockStyle.Fill, Visible = false };
 			RichText = new RichTextBox { Dock = DockStyle.Fill };
 		    RichText.TextChanged += RichTextOnTextChanged;
-		    _timer = new System.Timers.Timer(1000) {AutoReset = false};
-		    _timer.Elapsed += TimerOnElapsed;
 		}
 
         public string FileToOpen
@@ -40,16 +39,41 @@ namespace uw_edit.Views
             }
         }
 
+		private Font GetFont()
+		{
+			// search for fonts in this order
+			var preferredFonts = new [] { "Nirmala UI", "FreeSerif" };
+
+			foreach (var fontName in preferredFonts)
+			{
+				foreach (FontFamily family in FontFamily.Families)
+				{
+					if (family.Name == fontName)
+						return new Font(family, 11, FontStyle.Regular);
+				}
+			}
+
+			return new Font(FontFamily.GenericMonospace, 11, FontStyle.Regular);
+		}
+
         public void LoadTemplate()
         {
             // if no usfm file was selected when starting, open the default template
             if (string.IsNullOrEmpty(FileToOpen))
-                FileToOpen = Path.Combine(Program.GetResourcesDirectory(), "USFMTemplate.usfm");
+                FileToOpen = Path.Combine(Program.GetResourcesDirectory(), "usfm_templateemplate.usfm");
 
 			if (!string.IsNullOrEmpty(FileToOpen))
 			{
+				RichText.Visible = false;
 				TextTools.SetUsfmFromFile(RichText, FileToOpen);
+				RichText.SelectionStart = 0;
+				RichText.SelectionLength = RichText.Text.Length;
+				RichText.SelectionFont = GetFont();
+				RichText.SelectionLength = 0;
 				FileToOpen = string.Empty;
+				TextTools.MarkupUSFM(RichText);
+				RichText.Visible = true;
+				EnableTimer();
 			}
         }
 
@@ -61,6 +85,14 @@ namespace uw_edit.Views
 			{
 				case MainViewMenu.MainMenuOption.FileExit:
 					ExitProgram?.Invoke(this, eventArgs);
+					return;
+
+				case MainViewMenu.MainMenuOption.WordWrapOn:
+					RichText.WordWrap = true;
+					return;
+
+				case MainViewMenu.MainMenuOption.WordWrapOff:
+					RichText.WordWrap = false;
 					return;
 			}
 		}
@@ -88,42 +120,57 @@ namespace uw_edit.Views
 
         private void TimerOnElapsed(object sender, ElapsedEventArgs elapsedEventArgs)
         {
-			RichText.Invoke((MethodInvoker)delegate () 
+			RichText.Invoke((MethodInvoker)delegate ()
 			{
-					RichTextImage.Invoke((MethodInvoker)delegate ()
+				RichTextImage.Invoke((MethodInvoker)delegate ()
+				{
+
+					Application.UseWaitCursor = true;
+				
+					try
 					{
-							try
-							{
-								RichText.TextChanged -= RichTextOnTextChanged;
+						RichText.TextChanged -= RichTextOnTextChanged;
 
-								// do this to avoid flicker
-								Rectangle sourceRect = RichText.ClientRectangle;
-								Size targetSize = RichText.Size;
-								using (Bitmap tmp = new Bitmap(sourceRect.Width, sourceRect.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb))
-								{
-									RichText.DrawToBitmap(tmp, sourceRect);
-									RichTextImage.Image = tmp;
-									RichTextImage.Visible = true;
-								}
+						// do this to avoid flicker
+						Rectangle sourceRect = RichText.ClientRectangle;
+						Size targetSize = RichText.Size;
+						using (Bitmap tmp = new Bitmap(sourceRect.Width, sourceRect.Height, PixelFormat.Format32bppArgb))
+						{
+							RichText.DrawToBitmap(tmp, sourceRect);
+							RichTextImage.Image = tmp;
+							RichTextImage.Visible = true;
+						}
 
-								TextTools.MarkupUSFM(RichText);
-							}
-							catch (Exception e) 
-							{
-								MessageBox.Show(e.ToString());
-							}
-							finally
-							{
-								RichTextImage.Visible = false;
-								RichText.TextChanged += RichTextOnTextChanged;
-							}
-					});
+						TextTools.MarkupUSFM(RichText);
+					}
+					catch (Exception e)
+					{
+						MessageBox.Show(e.ToString());
+					}
+					finally
+					{
+						RichTextImage.Visible = false;
+						RichText.TextChanged += RichTextOnTextChanged;
+						Application.UseWaitCursor = false;
+					}
+				});
 			});
         }
 
+		private void EnableTimer()
+		{
+			if (_timer == null)
+			{
+				_timer = new System.Timers.Timer(2000) { AutoReset = false };
+				_timer.Elapsed += TimerOnElapsed;
+			}
+		}
+
         private void RichTextOnTextChanged(object sender, EventArgs eventArgs)
         {
-            if (_timer.Enabled)
+			if (_timer == null) return;
+
+			if (_timer.Enabled)
             {
                 _timer.Enabled = false;
             }

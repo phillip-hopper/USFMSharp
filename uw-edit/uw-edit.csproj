@@ -47,6 +47,7 @@
     </Compile>
     <Compile Include="SIL\PlatformUtilities\Platform.cs" />
     <Compile Include="USFM\TextTools.cs" />
+    <Compile Include="USFM\ParatextStylesheet.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Windows.Forms" />
@@ -56,9 +57,8 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
-    <None Include="Resources\USFMTemplate.usfm">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <None Include="Resources\usfm_sb.sty" />
+    <None Include="Resources\usfm_template.usfm" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Target Name="SelectTargetsConfig">
@@ -66,4 +66,7 @@
     <Exec Condition="'$(OS)'!='Windows_NT'" Command="cat packages.Linux &gt;packages.config" />
   </Target>
   <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Resources\" />
+  </ItemGroup>
 </Project>

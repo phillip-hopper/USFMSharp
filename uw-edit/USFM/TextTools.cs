@@ -1,4 +1,6 @@
 ﻿using System.Drawing;
+using System.IO;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
@@ -28,7 +30,8 @@ namespace uw_edit.USFM
 		/// <param name="fileName">The name of the file to load</param>
 		public static void SetUsfmFromFile(RichTextBox richText, string fileName)
 		{
-			richText.LoadFile(fileName, RichTextBoxStreamType.PlainText);
+			string allText = File.ReadAllText(fileName, Encoding.UTF8);
+			richText.Text = allText;
 		}
 
 		public static void MarkupUSFM(RichTextBox richText)
