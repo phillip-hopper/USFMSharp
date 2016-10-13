@@ -48,6 +48,7 @@
     <Compile Include="SIL\PlatformUtilities\Platform.cs" />
     <Compile Include="USFM\TextTools.cs" />
     <Compile Include="USFM\ParatextStylesheet.cs" />
+    <Compile Include="Tools\diff.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Windows.Forms" />
@@ -68,5 +69,6 @@
   <ItemGroup />
   <ItemGroup>
     <Folder Include="Resources\" />
+    <Folder Include="Tools\" />
   </ItemGroup>
 </Project>

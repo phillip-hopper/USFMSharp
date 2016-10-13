@@ -39,23 +39,6 @@ namespace uw_edit.Views
             }
         }
 
-		private Font GetFont()
-		{
-			// search for fonts in this order
-			var preferredFonts = new [] { "Nirmala UI", "FreeSerif" };
-
-			foreach (var fontName in preferredFonts)
-			{
-				foreach (FontFamily family in FontFamily.Families)
-				{
-					if (family.Name == fontName)
-						return new Font(family, 11, FontStyle.Regular);
-				}
-			}
-
-			return new Font(FontFamily.GenericMonospace, 11, FontStyle.Regular);
-		}
-
         public void LoadTemplate()
         {
             // if no usfm file was selected when starting, open the default template
@@ -68,7 +51,7 @@ namespace uw_edit.Views
 				TextTools.SetUsfmFromFile(RichText, FileToOpen);
 				RichText.SelectionStart = 0;
 				RichText.SelectionLength = RichText.Text.Length;
-				RichText.SelectionFont = GetFont();
+				RichText.SelectionFont = Program.GetTextFont();
 				RichText.SelectionLength = 0;
 				FileToOpen = string.Empty;
 				TextTools.MarkupUSFM(RichText);
