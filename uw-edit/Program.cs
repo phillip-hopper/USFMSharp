@@ -21,7 +21,7 @@ namespace uw_edit
 		private static void Main()
 		{
 			Application.EnableVisualStyles();
-			Application.SetCompatibleTextRenderingDefault(false);
+			Application.SetCompatibleTextRenderingDefault(true);
 
 		    var viewModel = new MainViewModel();
 

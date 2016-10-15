@@ -43,7 +43,7 @@ namespace uw_edit.Views
         {
             // if no usfm file was selected when starting, open the default template
             if (string.IsNullOrEmpty(FileToOpen))
-                FileToOpen = Path.Combine(Program.GetResourcesDirectory(), "usfm_templateemplate.usfm");
+                FileToOpen = Path.Combine(Program.GetResourcesDirectory(), "usfm_template.usfm");
 
 			if (!string.IsNullOrEmpty(FileToOpen))
 			{
@@ -107,9 +107,6 @@ namespace uw_edit.Views
 			{
 				RichTextImage.Invoke((MethodInvoker)delegate ()
 				{
-
-					Application.UseWaitCursor = true;
-				
 					try
 					{
 						RichText.TextChanged -= RichTextOnTextChanged;
@@ -134,7 +131,6 @@ namespace uw_edit.Views
 					{
 						RichTextImage.Visible = false;
 						RichText.TextChanged += RichTextOnTextChanged;
-						Application.UseWaitCursor = false;
 					}
 				});
 			});
