@@ -1,13 +1,12 @@
 ﻿using NUnit.Framework;
-using System;
 using uw_edit.Views;
 
 namespace uw_edit_tests
 {
-	[TestFixture()]
+	[TestFixture]
 	public class MainViewModelTests
 	{
-		[Test()]
+		[Test]
 		public void CreateInstance()
 		{
 			var mainViewModel = new MainViewModel();

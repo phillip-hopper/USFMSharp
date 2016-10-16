@@ -9,11 +9,14 @@ namespace uw_edit.Views
     public class MainView : Form
     {
         private readonly MainViewModel _model;
+		private MainViewStatusStrip _statusStrip;
+		private bool _loaded;
 
         public MainView(MainViewModel model)
         {
 			_model = model;
 			_model.ExitProgram += _model_ExitProgram;
+			_model.SelectionChanged += _model_SelectionChanged;
 
 			Application.UseWaitCursor = true;
 
@@ -25,6 +28,8 @@ namespace uw_edit.Views
             Closing += HandleClosing;
 
             _model.LoadTemplate();
+
+			_loaded = true;
         }
 
         private void InitializeForm()
@@ -51,7 +56,6 @@ namespace uw_edit.Views
 			var toolStrip = new MainViewStrip();
 			toolStrip.StripItemClicked += _model.HandleStripItemClicked;
 			toolStrip.Font = new Font(Font.FontFamily, 12);
-
 			Controls.Add(toolStrip);
 
             // main menu
@@ -61,6 +65,12 @@ namespace uw_edit.Views
 			menuStrip.Dock = DockStyle.Top;
             Controls.Add(menuStrip);
             MainMenuStrip = menuStrip;
+
+			// status bar
+			_statusStrip = new MainViewStatusStrip();
+			_statusStrip.Font = new Font(Font.FontFamily, 10);
+			_statusStrip.Dock = DockStyle.Bottom;
+			Controls.Add(_statusStrip);
 
             // finished adding controls
             ResumeLayout(true);
@@ -96,6 +106,15 @@ namespace uw_edit.Views
 			Close();
 		}
 
+		void _model_SelectionChanged(object sender, SelectionChangedEventArgs e)
+		{
+			if (!_loaded) return;
+
+			_statusStrip.Items[0].Text = string.Format("Ln: {0}", e.LineNumber);
+			_statusStrip.Items[1].Text = string.Format("Col: {0}", e.ColumnNumber);
+		}
+
 		#endregion
+
 	}
 }

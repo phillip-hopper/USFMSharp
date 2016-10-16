@@ -50,6 +50,7 @@
     <Compile Include="USFM\TextTools.cs" />
     <Compile Include="USFM\ParatextStylesheet.cs" />
     <Compile Include="Tools\diff.cs" />
+    <Compile Include="UserControls\MainViewStatusStrip.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Windows.Forms" />
