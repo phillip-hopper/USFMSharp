@@ -49,8 +49,9 @@
     <Compile Include="SIL\PlatformUtilities\Platform.cs" />
     <Compile Include="USFM\TextTools.cs" />
     <Compile Include="USFM\ParatextStylesheet.cs" />
-    <Compile Include="Tools\diff.cs" />
+    <Compile Include="Tools\Diff.cs" />
     <Compile Include="UserControls\MainViewStatusStrip.cs" />
+    <Compile Include="Tools\UnixTimestamp.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Windows.Forms" />

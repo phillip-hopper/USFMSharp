@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Text;
 using System.Windows.Forms;
 using SIL.PlatformUtilities;
+using uw_edit.USFM;
 using uw_edit.Views;
 
 namespace uw_edit
@@ -24,6 +25,7 @@ namespace uw_edit
 			Application.SetCompatibleTextRenderingDefault(true);
 
 		    var viewModel = new MainViewModel();
+			_styleSheet = new ParatextStylesheet();
 
 		    var args = Environment.GetCommandLineArgs();
 		    if (args.Length > 1)
