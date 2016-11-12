@@ -52,6 +52,7 @@
     <Compile Include="Tools\Diff.cs" />
     <Compile Include="UserControls\MainViewStatusStrip.cs" />
     <Compile Include="Tools\UnixTimestamp.cs" />
+    <Compile Include="USFM\TagError.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Windows.Forms" />

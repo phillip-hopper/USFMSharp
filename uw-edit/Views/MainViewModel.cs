@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -13,19 +14,35 @@ namespace uw_edit.Views
     {
 		public event EventHandler ExitProgram;
 		public event EventHandler<SelectionChangedEventArgs> SelectionChanged;
+		public event EventHandler<FileLoadedEventArgs> FileLoaded;
 
-		public RichTextBox RichText { get; set; }
-		public PictureBox RichTextImage { get; set; }
+		public RichTextBox RichText { get; private set; }
+		public PictureBox RichTextImage { get; private set; }
+		public ListView ErrorList { get; private set; }
 
         private string _fileToOpen;
         private System.Timers.Timer _timer;
+		private BackgroundWorker _backgroundWorker = new BackgroundWorker();
 
 		public MainViewModel()
 		{
 			RichTextImage = new PictureBox { Dock = DockStyle.Fill, Visible = false };
 			RichText = new RichTextBox { Dock = DockStyle.Fill };
-		    RichText.TextChanged += RichTextOnTextChanged;
-			RichText.SelectionChanged += RichTextOnSelectionChanged;
+		    RichText.TextChanged += HandleRichTextOnTextChanged;
+			RichText.SelectionChanged += HandleRichTextOnSelectionChanged;
+
+			ErrorList = new ListView
+			{
+				View = View.Details,
+				Dock = DockStyle.Fill,
+				FullRowSelect = true
+			};
+			ErrorList.Columns.Add("Line #", 80, HorizontalAlignment.Left);
+			ErrorList.Columns.Add("Text of the error", 200, HorizontalAlignment.Left);
+			ErrorList.Resize += HandleErrorListResize;
+			ErrorList.MouseDoubleClick += HandleErrorListMouseDoubleClick;
+
+			_backgroundWorker.DoWork += HandleBackgroundWorkerDoWork;
 		}
 
         public string FileToOpen
@@ -41,7 +58,7 @@ namespace uw_edit.Views
             }
         }
 
-        public void LoadTemplate()
+        public void LoadUsfmFile()
         {
             // if no usfm file was selected when starting, open the default template
             if (string.IsNullOrEmpty(FileToOpen))
@@ -55,19 +72,66 @@ namespace uw_edit.Views
 				RichText.SelectionLength = RichText.Text.Length;
 				RichText.SelectionFont = Program.GetTextFont();
 				RichText.SelectionLength = 0;
-				FileToOpen = string.Empty;
+				RichText.WordWrap = false;
 				TextTools.MarkupUSFM(RichText);
 				RichText.Visible = true;
+				FileLoaded?.Invoke(this, new FileLoadedEventArgs(FileToOpen));
+				FileToOpen = string.Empty;
 				EnableTimer();
 			}
         }
 
+		private void EnableTimer()
+		{
+			if (_timer == null)
+			{
+				_timer = new System.Timers.Timer(2000) { AutoReset = false };
+				_timer.Elapsed += HandleTimerOnElapsed;
+			}
+		}
+
+		private void SelectFileToOpen()
+		{
+			using (var ofd = new OpenFileDialog())
+			{
+				ofd.Filter = "USFM files (*.usfm)|*.usfm|All files (*.*)|*.*";
+				ofd.Multiselect = false;
+
+				if (ofd.ShowDialog() != DialogResult.OK)
+					return;
+
+				FileToOpen = ofd.FileName;
+				LoadUsfmFile();
+			}
+		}
+
+		private void DisplayErrors(TagErrors tagErrors)
+		{
+
+			ErrorList.Items.Clear();
+
+			foreach (var error in tagErrors.Errors)
+			{
+				ErrorList.Items.Add(new ListViewItem(new[] { error.LineNumber.ToString(), error.HintText }));
+			}
+		}
+
 		#region Event Handlers
 
-		public void HandleMenuItemClicked(object sender, MainMenuClickEventArgs eventArgs)
+		public void MenuItemClicked(MainMenuClickEventArgs eventArgs)
 		{
 			switch (eventArgs.ItemClicked)
 			{
+				case MainViewMenu.MainMenuOption.FileNew:
+					return;
+					
+				case MainViewMenu.MainMenuOption.FileOpen:
+					SelectFileToOpen();
+					return;
+					
+				case MainViewMenu.MainMenuOption.FileSave:
+					return;
+					
 				case MainViewMenu.MainMenuOption.FileExit:
 					ExitProgram?.Invoke(this, eventArgs);
 					return;
@@ -79,10 +143,18 @@ namespace uw_edit.Views
 				case MainViewMenu.MainMenuOption.WordWrapOff:
 					RichText.WordWrap = false;
 					return;
+
+				case MainViewMenu.MainMenuOption.ViewRefresh:
+					if (_timer != null && _timer.Enabled)
+						_timer.Enabled = false;
+
+					DisplayErrors(TextTools.GetErrors(RichText));
+
+					return;
 			}
 		}
 
-		public void HandleStripItemClicked(object sender, MainStripClickEventArgs eventArgs)
+		public void StripItemClicked(MainStripClickEventArgs eventArgs)
 		{
 			switch (eventArgs.ItemClicked)
 			{
@@ -103,27 +175,29 @@ namespace uw_edit.Views
 			}
 		}
 
-        private void TimerOnElapsed(object sender, ElapsedEventArgs elapsedEventArgs)
+		private void HandleTimerOnElapsed(object sender, ElapsedEventArgs elapsedEventArgs)
         {
-			RichText.Invoke((MethodInvoker)delegate ()
+			RichText.Invoke((MethodInvoker)delegate
 			{
-				RichTextImage.Invoke((MethodInvoker)delegate ()
+				RichTextImage.Invoke((MethodInvoker)delegate
 				{
 					try
 					{
-						RichText.TextChanged -= RichTextOnTextChanged;
+						RichText.TextChanged -= HandleRichTextOnTextChanged;
 
 						// do this to avoid flicker
-						Rectangle sourceRect = RichText.ClientRectangle;
-						Size targetSize = RichText.Size;
-						using (Bitmap tmp = new Bitmap(sourceRect.Width, sourceRect.Height, PixelFormat.Format32bppArgb))
+						var sourceRect = RichText.ClientRectangle;
+
+						using (var tmp = new Bitmap(sourceRect.Width, sourceRect.Height, PixelFormat.Format32bppArgb))
 						{
 							RichText.DrawToBitmap(tmp, sourceRect);
 							RichTextImage.Image = tmp;
 							RichTextImage.Visible = true;
 						}
 
+						// display errors
 						TextTools.MarkupUSFM(RichText);
+						_backgroundWorker.RunWorkerAsync();
 					}
 					catch (Exception e)
 					{
@@ -132,22 +206,13 @@ namespace uw_edit.Views
 					finally
 					{
 						RichTextImage.Visible = false;
-						RichText.TextChanged += RichTextOnTextChanged;
+						RichText.TextChanged += HandleRichTextOnTextChanged;
 					}
 				});
 			});
         }
 
-		private void EnableTimer()
-		{
-			if (_timer == null)
-			{
-				_timer = new System.Timers.Timer(2000) { AutoReset = false };
-				_timer.Elapsed += TimerOnElapsed;
-			}
-		}
-
-        private void RichTextOnTextChanged(object sender, EventArgs eventArgs)
+		private void HandleRichTextOnTextChanged(object sender, EventArgs eventArgs)
         {
 			if (_timer == null) return;
 
@@ -159,12 +224,52 @@ namespace uw_edit.Views
             _timer.Enabled = true;
         }
 
-		void RichTextOnSelectionChanged(object sender, EventArgs eventArgs)
+		private void HandleRichTextOnSelectionChanged(object sender, EventArgs eventArgs)
 		{
 			var lineNum = RichText.GetLineFromCharIndex(RichText.SelectionStart) + 1;
 			var columnNum = RichText.SelectionStart - RichText.GetFirstCharIndexOfCurrentLine() + 1;
 
 			SelectionChanged?.Invoke(this, new SelectionChangedEventArgs(lineNum, columnNum));
+		}
+
+		void HandleBackgroundWorkerDoWork(object sender, DoWorkEventArgs e)
+		{
+			if (RichText.InvokeRequired)
+			{
+				RichText.BeginInvoke((MethodInvoker)(() =>
+				{
+					DisplayErrors(TextTools.GetErrors(RichText));
+				}));
+			}
+
+		}
+
+		void HandleErrorListMouseDoubleClick(object sender, MouseEventArgs e)
+		{
+			ListViewHitTestInfo info = ErrorList.HitTest(e.X, e.Y);
+			ListViewItem item = info.Item;
+
+			if (item == null)
+				return;
+
+			var lineNumber = int.Parse(ErrorList.SelectedItems[0].Text) - 1;
+
+			if (lineNumber > RichText.Lines.Length)
+				return;
+
+			var line = RichText.Lines[lineNumber];
+			var pos = RichText.Find(line);
+			RichText.SelectionStart = pos;
+			RichText.ScrollToCaret();
+			RichText.Focus();
+		}
+
+		void HandleErrorListResize (object sender, EventArgs e)
+		{
+			if (ErrorList.Width > 200)
+			{
+				ErrorList.Columns[1].Width = ErrorList.Width - ErrorList.Columns[0].Width - 22;
+			}
 		}
 
         #endregion
@@ -180,6 +285,17 @@ namespace uw_edit.Views
 		{
 			LineNumber = lineNumber;
 			ColumnNumber = columnNumber;
+		}
+	}
+
+	public class FileLoadedEventArgs : EventArgs
+	{
+		public string FullPath;
+		public string FileName { get { return Path.GetFileName(FullPath); } }
+
+		public FileLoadedEventArgs(string fullPath)
+		{
+			FullPath = fullPath;
 		}
 	}
 }
