@@ -15,7 +15,7 @@ namespace uw_edit
 	    private static string _appDirectory;
 		private static Font _textFont;
 		private static Font _tagFont;
-		private static ParatextStylesheet _styleSheet;
+		public static ParatextStylesheet StyleSheet { get; private set; }
 
 		/// <summary>The main entry point for the application.</summary>
 		[STAThread]
@@ -25,7 +25,7 @@ namespace uw_edit
 			Application.SetCompatibleTextRenderingDefault(true);
 
 		    var viewModel = new MainViewModel();
-			_styleSheet = new ParatextStylesheet();
+			StyleSheet = new ParatextStylesheet();
 
 		    var args = Environment.GetCommandLineArgs();
 		    if (args.Length > 1)

@@ -10,13 +10,16 @@ namespace uw_edit.Views
     {
         private readonly MainViewModel _model;
 		private MainViewStatusStrip _statusStrip;
-		private bool _loaded;
+		private readonly bool _loaded;
+		private readonly string _formDisplayName = "uw-Edit";
+		private SplitContainer _splitter;
 
         public MainView(MainViewModel model)
         {
 			_model = model;
 			_model.ExitProgram += _model_ExitProgram;
 			_model.SelectionChanged += _model_SelectionChanged;
+			_model.FileLoaded += _model_FileLoaded;
 
 			Application.UseWaitCursor = true;
 
@@ -27,7 +30,7 @@ namespace uw_edit.Views
             Load += HandleLoad;
             Closing += HandleClosing;
 
-            _model.LoadTemplate();
+            _model.LoadUsfmFile();
 
 			_loaded = true;
         }
@@ -43,24 +46,32 @@ namespace uw_edit.Views
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(600, 500);
             Name = "MainForm";
-            Text = "tx-Edit";
+            Text = _formDisplayName;
 
 			// editor image
 			Controls.Add(_model.RichTextImage);
 
+			// splitter
+			_splitter = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Horizontal };
+			Controls.Add(_splitter);
+
 			// editor control
             _model.RichText.Font = new Font(Font.FontFamily, 12);
-            Controls.Add(_model.RichText);
+			_splitter.Panel1.Controls.Add(_model.RichText);
+
+			// error list
+			_splitter.Panel2.Controls.Add(_model.ErrorList);
+			_splitter.SplitterDistance = 100;
 
 			// tool strip
 			var toolStrip = new MainViewStrip();
-			toolStrip.StripItemClicked += _model.HandleStripItemClicked;
+			toolStrip.StripItemClicked += (sender, e) => _model.StripItemClicked(e);
 			toolStrip.Font = new Font(Font.FontFamily, 12);
 			Controls.Add(toolStrip);
 
             // main menu
             var menuStrip = new MainViewMenu();
-            menuStrip.MenuItemClicked += _model.HandleMenuItemClicked;
+			menuStrip.MenuItemClicked += (sender, e) => _model.MenuItemClicked(e);
 			menuStrip.Font = Font;
 			menuStrip.Dock = DockStyle.Top;
             Controls.Add(menuStrip);
@@ -97,11 +108,16 @@ namespace uw_edit.Views
 //            throw new NotImplementedException();
         }
 
+		void _model_FileLoaded(object sender, FileLoadedEventArgs e)
+		{
+			Text = string.Format("{0}  –  {1}", _formDisplayName, e.FileName);
+		}
+
 		#endregion
 
 		#region Control Events
 
-        private void _model_ExitProgram(object sender, EventArgs e)
+		private void _model_ExitProgram(object sender, EventArgs e)
 		{
 			Close();
 		}

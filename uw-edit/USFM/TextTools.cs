@@ -10,20 +10,12 @@ namespace uw_edit.USFM
 {
 	public static class TextTools
 	{
-		private static Regex _knownTagsRe;
 		private static string _previousText = string.Empty;
 
-		private static string[] _knownTags = {
-			@"^(\\id|\\ide|\\h)(\s+)",  // book id, encoding and heading
-			@"^(\\sts|\\rem)(\s+)",     // status and remarks
-			@"^(\\toc[0-9])(\s+)",      // table of contents
-			@"^(\\mt[0-9]?)(\s+)",      // major titles
-			@"^(\\p)(\s+)",             // paragraph
-			@"^(\\v [0-9-]+)(\s+)",     // verse
-			@"^(\\c [0-9]+)(\s+)"       // chapter
-		};
-
-		private static Regex _unknownTagsRe = new Regex(@"(\\\w+)(\s+)", RegexOptions.Compiled);
+	    private const string FootnoteCallers = "+-?";
+	    private static readonly Regex AllTagsRe = new Regex(@"(\\[\w*]+)(\s+)(([0-9-+\?]*?)\s)*", RegexOptions.Compiled);
+		private static readonly Regex ChapterNumberRe = new Regex(@"^[1234567890]+$", RegexOptions.Compiled);
+		private static readonly Regex VerseNumberRe = new Regex(@"^[1234567890\-,]+$", RegexOptions.Compiled);
 
 		/// <summary>
 		/// Sets the USFM loaded from a file
@@ -32,25 +24,13 @@ namespace uw_edit.USFM
 		/// <param name="fileName">The name of the file to load</param>
 		public static void SetUsfmFromFile(RichTextBox richText, string fileName)
 		{
+			_previousText = string.Empty;
 			string allText = File.ReadAllText(fileName, Encoding.UTF8);
 			richText.Text = allText;
 		}
 
 		public static void MarkupUSFM(RichTextBox richText)
 		{
-			// compile the known-tags Regex, if it hasn't been done already
-			if (_knownTagsRe == null)
-			{
-				var temp = new string[_knownTags.Length];
-				for (var i = 0; i < _knownTags.Length; i++)
-				{
-					var tag = _knownTags[i];
-					temp[i] = "(?:" + tag + ")";
-				}
-
-				_knownTagsRe = new Regex(string.Join("|", temp), RegexOptions.Multiline | RegexOptions.Compiled);
-			}
-
 			// do a diff
 			var diff = Diff.DiffText(_previousText, richText.Text, false, false, false);
 			if (diff.Length == 0)
@@ -66,14 +46,14 @@ namespace uw_edit.USFM
 
 			// get the start index
 			var startLine = diff[0].StartB == 0 ? 0 : diff[0].StartB - 1;
-			var startIndex = GetNthIndexOfNL(richText.Text, startLine, 0);
+			var startIndex = GetNthIndexOfNewLine(richText.Text, startLine, 0);
 			if (startIndex == -1)
 				startIndex = 0;
 			richText.SelectionStart = startIndex == -1 ? 0 : startIndex;
 
 			// get the end index
 			var endLine = diff[0].insertedB + 1;
-			var endIndex = GetNthIndexOfNL(richText.Text, endLine, startIndex);
+			var endIndex = GetNthIndexOfNewLine(richText.Text, endLine, startIndex);
 			if (endIndex < startIndex)
 				endIndex = richText.TextLength;
 			else if (endIndex > richText.TextLength)
@@ -84,25 +64,40 @@ namespace uw_edit.USFM
 			// clear highlighting
 			richText.SelectionColor = Color.Black;
 
-			// mark the unknown tags
+			// get all the tags in the selection
 			var textToMark = richText.SelectedText;
-			var matches = _unknownTagsRe.Matches(textToMark);
+			var matches = AllTagsRe.Matches(textToMark);
 			foreach (Match match in matches)
 			{
 				richText.SelectionStart = startIndex + match.Index;
 				richText.SelectionLength = match.Value.TrimEnd().Length;
-				richText.SelectionColor = Color.Red;
-				//richText.SelectionFont = Program.GetTagFont();
-			}
-				
-			// mark the known tags
-			matches = _knownTagsRe.Matches(textToMark);
-			foreach (Match match in matches)
-			{
-				richText.SelectionStart = startIndex + match.Index;
-				richText.SelectionLength = match.Value.TrimEnd().Length;
-				richText.SelectionColor = Color.Blue;
-				//richText.SelectionFont = Program.GetTagFont();
+
+				var foundTag = match.Groups[1].Value;
+				var foundExtra = match.Groups[4].Value;
+
+				// \c and \v must be accompanied by chapter or verse numbers
+				if (foundTag == "\\c" || foundTag == "\\v")
+				{
+					if (!string.IsNullOrEmpty(foundExtra) && IsValidChapterOrVerseNumber(foundTag, foundExtra))
+						richText.SelectionColor = Color.Blue;
+					else
+						richText.SelectionColor = Color.Red;
+				}
+				// \f must be followed by " + ", " - " or " ? "
+				else if (foundTag == "\\f")
+				{
+					if (!string.IsNullOrEmpty(foundExtra) && FootnoteCallers.Contains(foundExtra))
+						richText.SelectionColor = Color.Blue;
+					else
+						richText.SelectionColor = Color.Red;
+				}
+				else 
+				{
+					if (Program.StyleSheet.Tags.Contains(foundTag))
+						richText.SelectionColor = Color.Blue;
+					else
+						richText.SelectionColor = Color.Red;
+				}
 			}
 
 			// restore original scroll position
@@ -117,7 +112,7 @@ namespace uw_edit.USFM
 			_previousText = richText.Text;
 		}
 
-		private static int GetNthIndexOfNL(string s, int nth, int startIndex)
+		private static int GetNthIndexOfNewLine(string s, int nth, int startIndex)
 		{
 			if (nth == 0)
 				return 0;
@@ -137,6 +132,55 @@ namespace uw_edit.USFM
 
 			// if we are here, we didn't find it
 			return -1;
+		}
+
+		private static bool IsValidChapterOrVerseNumber(string tag, string stringToCheck)
+		{
+			if (tag == "\\v")
+				return VerseNumberRe.IsMatch(stringToCheck);
+
+			return ChapterNumberRe.IsMatch(stringToCheck);
+		}
+
+		private static TagError ErrorFromMatch(RichTextBox richText, Match match)
+		{
+			var lineNum = richText.GetLineFromCharIndex(match.Index) + 1;
+
+			return new TagError(lineNum, match.Groups[0].Index, match.Groups[0].Value.Trim());
+		}
+
+		public static TagErrors GetErrors(RichTextBox richText)
+		{
+			var errors = new TagErrors();
+
+			// get all the tags in the selection
+			var textToMark = richText.Text;
+			var matches = AllTagsRe.Matches(textToMark);
+			foreach (Match match in matches)
+			{
+				var foundTag = match.Groups[1].Value;
+				var foundExtra = match.Groups[4].Value;
+
+				// \c and \v must be accompanied by chapter or verse numbers
+				if (foundTag == "\\c" || foundTag == "\\v")
+				{
+					if (string.IsNullOrEmpty(foundExtra) || !IsValidChapterOrVerseNumber(foundTag, foundExtra))
+						errors.Add(ErrorFromMatch(richText, match));
+				}
+				// \f must be followed by " + ", " - " or " ? "
+				else if (foundTag == "\\f")
+				{
+					if (string.IsNullOrEmpty(foundExtra) || !FootnoteCallers.Contains(foundExtra))
+						errors.Add(ErrorFromMatch(richText, match));
+				}
+				else
+				{
+					if (!Program.StyleSheet.Tags.Contains(foundTag))
+						errors.Add(ErrorFromMatch(richText, match));
+				}
+			}
+
+			return errors;
 		}
 	}
 }
