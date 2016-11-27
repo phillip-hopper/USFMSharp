@@ -16,6 +16,9 @@ namespace uw_edit.USFM
 	    private static readonly Regex AllTagsRe = new Regex(@"(\\[\w*]+)(\s+)(([0-9-+\?]*?)\s)*", RegexOptions.Compiled);
 		private static readonly Regex ChapterNumberRe = new Regex(@"^[1234567890]+$", RegexOptions.Compiled);
 		private static readonly Regex VerseNumberRe = new Regex(@"^[1234567890\-,]+$", RegexOptions.Compiled);
+		private static readonly Regex S5Re = new Regex(@"\\s5\s*", RegexOptions.Compiled);
+		private static readonly Regex TrailingRe = new Regex(@"[\t\v\x85\p{Z}]+$", RegexOptions.Compiled | RegexOptions.Multiline);
+		private static readonly Regex BlankLineRe = new Regex(@"^\s*\n", RegexOptions.Compiled | RegexOptions.Multiline);
 
 		/// <summary>
 		/// Sets the USFM loaded from a file
@@ -32,8 +35,8 @@ namespace uw_edit.USFM
 		public static void MarkupUSFM(RichTextBox richText)
 		{
 			// do a diff
-			var diff = Diff.DiffText(_previousText, richText.Text, false, false, false);
-			if (diff.Length == 0)
+			var diffs = Diff.DiffText(_previousText, richText.Text, false, false, false);
+			if (diffs.Length == 0)
 				return;
 			
 			// minimize flickering
@@ -45,14 +48,28 @@ namespace uw_edit.USFM
 			var firstVisibleChar = richText.GetCharIndexFromPosition(new Point(1, 1));
 
 			// get the start index
-			var startLine = diff[0].StartB == 0 ? 0 : diff[0].StartB - 1;
+			var startLine = int.MaxValue;
+			foreach (var diff in diffs)
+			{
+				var testStartLine = diff.StartB == 0 ? 0 : diff.StartB - 1;
+				if (testStartLine < startLine)
+					startLine = testStartLine;
+			}
+
 			var startIndex = GetNthIndexOfNewLine(richText.Text, startLine, 0);
 			if (startIndex == -1)
 				startIndex = 0;
 			richText.SelectionStart = startIndex == -1 ? 0 : startIndex;
 
 			// get the end index
-			var endLine = diff[0].insertedB + 1;
+			var endLine = 0;
+			foreach (var diff in diffs)
+			{
+				var testEndLine = diff.insertedB + 1;
+				if (testEndLine > endLine)
+					endLine = testEndLine;
+			}
+
 			var endIndex = GetNthIndexOfNewLine(richText.Text, endLine, startIndex);
 			if (endIndex < startIndex)
 				endIndex = richText.TextLength;
@@ -142,11 +159,11 @@ namespace uw_edit.USFM
 			return ChapterNumberRe.IsMatch(stringToCheck);
 		}
 
-		private static TagError ErrorFromMatch(RichTextBox richText, Match match)
+		private static TagError ErrorFromMatch(RichTextBox richText, Match match, string description)
 		{
 			var lineNum = richText.GetLineFromCharIndex(match.Index) + 1;
 
-			return new TagError(lineNum, match.Groups[0].Index, match.Groups[0].Value.Trim());
+			return new TagError(lineNum, match.Groups[0].Index, match.Groups[0].Value.Trim(), description);
 		}
 
 		public static TagErrors GetErrors(RichTextBox richText)
@@ -161,26 +178,89 @@ namespace uw_edit.USFM
 				var foundTag = match.Groups[1].Value;
 				var foundExtra = match.Groups[4].Value;
 
-				// \c and \v must be accompanied by chapter or verse numbers
-				if (foundTag == "\\c" || foundTag == "\\v")
+				// \c must be accompanied by chapter number
+				if (foundTag == "\\c")
 				{
 					if (string.IsNullOrEmpty(foundExtra) || !IsValidChapterOrVerseNumber(foundTag, foundExtra))
-						errors.Add(ErrorFromMatch(richText, match));
+						errors.Add(ErrorFromMatch(richText, match, "\\c must be followed by a chapter number"));
+				}
+				// \v must be accompanied by verse numbers
+				if (foundTag == "\\v")
+				{
+					if (string.IsNullOrEmpty(foundExtra) || !IsValidChapterOrVerseNumber(foundTag, foundExtra))
+						errors.Add(ErrorFromMatch(richText, match, "\\v must be followed by a verse number or verse bridge"));
 				}
 				// \f must be followed by " + ", " - " or " ? "
 				else if (foundTag == "\\f")
 				{
 					if (string.IsNullOrEmpty(foundExtra) || !FootnoteCallers.Contains(foundExtra))
-						errors.Add(ErrorFromMatch(richText, match));
+						errors.Add(ErrorFromMatch(richText, match, "\\f must be followed by \" + \", \" - \" or \" ? \""));
 				}
 				else
 				{
 					if (!Program.StyleSheet.Tags.Contains(foundTag))
-						errors.Add(ErrorFromMatch(richText, match));
+						errors.Add(ErrorFromMatch(richText, match, "Unknown USFM tag"));
 				}
 			}
 
 			return errors;
+		}
+
+		public static void RemoveS5Tags(RichTextBox richText)
+		{
+			RegexReplace(richText, S5Re, string.Empty);
+		}
+
+		public static void RemoveBlankLines(RichTextBox richText)
+		{
+			RegexReplace(richText, BlankLineRe, string.Empty);
+		}
+
+		public static void RemoveTrailingWhitespace(RichTextBox richText)
+		{
+			RegexReplace(richText, TrailingRe, string.Empty);
+		}
+
+		private static void RegexReplace(RichTextBox richText, Regex regex, string replaceWith)
+		{
+			// minimize flickering
+			richText.Visible = false;
+			Application.UseWaitCursor = true;
+			Application.DoEvents();
+
+			try
+			{
+				// remember the current cursor and scroll location
+				var currentStart = richText.SelectionStart;
+				var currentLength = richText.SelectionLength;
+				var firstVisibleChar = richText.GetCharIndexFromPosition(new Point(1, 1));
+
+				var matches = regex.Matches(richText.Text);
+
+				// we need to work backward because we are changing the text
+				for (var i = matches.Count - 1; i > -1; i--)
+				{
+					var match = matches[i];
+					richText.SelectionStart = match.Index;
+					richText.SelectionLength = match.Value.Length;
+					richText.SelectedText = replaceWith;
+				}
+
+				// restore original scroll position
+				richText.SelectionStart = firstVisibleChar;
+				richText.SelectionLength = 0;
+
+				// restore original selection
+				richText.SelectionStart = currentStart;
+				richText.SelectionLength = currentLength;
+				richText.Visible = true;
+
+				_previousText = richText.Text;
+			}
+			finally
+			{
+				Application.UseWaitCursor = false;
+			}
 		}
 	}
 }

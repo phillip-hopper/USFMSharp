@@ -16,6 +16,7 @@ namespace uw_edit
 		private static Font _textFont;
 		private static Font _tagFont;
 		public static ParatextStylesheet StyleSheet { get; private set; }
+		public static MainView MainView { get; private set; }
 
 		/// <summary>The main entry point for the application.</summary>
 		[STAThread]
@@ -31,7 +32,8 @@ namespace uw_edit
 		    if (args.Length > 1)
 		        viewModel.FileToOpen = args[1];
 
-			Application.Run(new MainView(viewModel));
+			MainView = new MainView(viewModel);
+			Application.Run(MainView);
 		}
 
 		public static string GetAppDirectory()
@@ -56,6 +58,11 @@ namespace uw_edit
 		public static string GetTextResource(string resourceFileName)
 		{
 			return File.ReadAllText(Path.Combine(GetResourcesDirectory(), resourceFileName), Encoding.UTF8);
+		}
+
+		public static Image GetImageResource(string imageFileName)
+		{
+			return Image.FromFile(Path.Combine(GetResourcesDirectory(), imageFileName));
 		}
 
 		public static Font GetTextFont()

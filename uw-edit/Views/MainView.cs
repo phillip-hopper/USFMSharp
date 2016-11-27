@@ -64,18 +64,13 @@ namespace uw_edit.Views
 			_splitter.SplitterDistance = 100;
 
 			// tool strip
-			var toolStrip = new MainViewStrip();
-			toolStrip.StripItemClicked += (sender, e) => _model.StripItemClicked(e);
-			toolStrip.Font = new Font(Font.FontFamily, 12);
-			Controls.Add(toolStrip);
+			_model.ToolStrip.Font = new Font(Font.FontFamily, 12);
+			Controls.Add(_model.ToolStrip);
 
             // main menu
-            var menuStrip = new MainViewMenu();
-			menuStrip.MenuItemClicked += (sender, e) => _model.MenuItemClicked(e);
-			menuStrip.Font = Font;
-			menuStrip.Dock = DockStyle.Top;
-            Controls.Add(menuStrip);
-            MainMenuStrip = menuStrip;
+			_model.MenuStrip.Font = Font;
+            Controls.Add(_model.MenuStrip);
+            MainMenuStrip = _model.MenuStrip;
 
 			// status bar
 			_statusStrip = new MainViewStatusStrip();
@@ -100,7 +95,7 @@ namespace uw_edit.Views
 
         private void HandleClosing(object sender, CancelEventArgs cancelEventArgs)
         {
-//            throw new NotImplementedException();
+			cancelEventArgs.Cancel |= !_model.FreeToOpen();
         }
 
         private void HandleLoad(object sender, EventArgs eventArgs)
@@ -110,7 +105,14 @@ namespace uw_edit.Views
 
 		void _model_FileLoaded(object sender, FileLoadedEventArgs e)
 		{
-			Text = string.Format("{0}  –  {1}", _formDisplayName, e.FileName);
+			if (string.IsNullOrEmpty(e.FileName))
+			{
+				Text = string.Format("{0}  –  {1}", _formDisplayName, "New File");
+			}
+			else 
+			{
+				Text = string.Format("{0}  –  {1}", _formDisplayName, e.FileName);
+			}
 		}
 
 		#endregion

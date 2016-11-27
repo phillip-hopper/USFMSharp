@@ -53,6 +53,7 @@
     <Compile Include="UserControls\MainViewStatusStrip.cs" />
     <Compile Include="Tools\UnixTimestamp.cs" />
     <Compile Include="USFM\TagError.cs" />
+    <Compile Include="Views\SaveChangesDialog.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Windows.Forms" />
@@ -66,6 +67,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Resources\usfm_template.usfm">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Resources\save.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
