@@ -8,12 +8,14 @@ namespace uw_edit.USFM
 		public int LineNumber { get; private set; }
 		public int CharacterIndex { get; private set; }
 		public string HintText { get; private set; }
+		public string Description { get; private set; }
 
-		public TagError(int lineNumber, int characterIndex, string hintText)
+		public TagError(int lineNumber, int characterIndex, string hintText, string description)
 		{
 			LineNumber = lineNumber;
 			CharacterIndex = characterIndex;
 			HintText = hintText;
+			Description = description;
 		}
 	}
 

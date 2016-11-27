@@ -1,15 +1,16 @@
 ﻿using System;
+using System.Drawing;
 using System.Windows.Forms;
 
 namespace uw_edit.UserControls
 {
 	public class MainViewStrip : ToolStrip
 	{
+		public ToolStripButton SaveButton { get; private set; }
+
 		public enum MainStripOption
 		{
-			Chapter,
-			Verse,
-			Paragraph
+			Save
 		}
 
 		public event EventHandler<MainStripClickEventArgs> StripItemClicked;
@@ -23,24 +24,21 @@ namespace uw_edit.UserControls
 		{
 			SuspendLayout();
 
-			var pBtn = new ToolStripButton("\\p");
-			pBtn.ToolTipText = "Paragraph";
-
-			var vBtn = new ToolStripButton("\\v");
-			vBtn.ToolTipText = "Verse";
+			MinimumSize = new Size(18, 18);
+			SaveButton = CreateButton("save.png", "Save", MainStripOption.Save);
 
 			Items.AddRange(new ToolStripItem[] {
-				CreateButton("\\c", "Chapter", MainStripOption.Chapter),
-				CreateButton("\\v", "Verse", MainStripOption.Verse),
-				CreateButton("\\p", "Pragraph", MainStripOption.Paragraph)
+				SaveButton,
+				new ToolStripSeparator()
 			});
 
 			ResumeLayout(true);
 		}
 
-		ToolStripButton CreateButton(string text, string toolTip, MainStripOption option)
+		ToolStripButton CreateButton(string imageFileName, string toolTip, MainStripOption option)
 		{
-			var btn = new ToolStripButton(text);
+			var btn = new ToolStripButton();
+			btn.Image = Program.GetImageResource(imageFileName);
 			btn.ToolTipText = toolTip;
 			btn.Click += (sender, e) => StripItemClicked?.Invoke(this, new MainStripClickEventArgs(option));
 			return btn;

@@ -13,7 +13,10 @@ namespace uw_edit.UserControls
 			FileNew,
 			WordWrapOn,
 			WordWrapOff,
-			ViewRefresh
+			ViewRefresh,
+			ToolsRemoveS5,
+			ToolsRemoveTrailingSpace,
+			ToolsRemoveBlankLines
 		}
 
         public event EventHandler<MainMenuClickEventArgs> MenuItemClicked;
@@ -27,11 +30,11 @@ namespace uw_edit.UserControls
         {
             SuspendLayout();
 
-			// file menu
+			#region file menu
 			var fileMenu = new ToolStripMenuItem("File");
 
 			// file menu sub-items
-			var fileExitMenu = new ToolStripMenuItem("Exit") { ShortcutKeys = Keys.Control | Keys.X };
+			var fileExitMenu = new ToolStripMenuItem("Quit") { ShortcutKeys = Keys.Control | Keys.Q };
 			fileExitMenu.Click += (sender, e) => MenuItemClicked?.Invoke(this, new MainMenuClickEventArgs(MainMenuOption.FileExit));
 
 			var fileOpenMenu = new ToolStripMenuItem("Open") { ShortcutKeys = Keys.Control | Keys.O };
@@ -44,8 +47,9 @@ namespace uw_edit.UserControls
 			fileNewMenu.Click += (sender, e) => MenuItemClicked?.Invoke(this, new MainMenuClickEventArgs(MainMenuOption.FileNew));
 
 			fileMenu.DropDownItems.AddRange(new ToolStripItem[] { fileNewMenu, fileOpenMenu, fileSaveMenu, fileExitMenu });
+			#endregion
 
-			// view menu
+			#region view menu
 			var viewMenu = new ToolStripMenuItem("View");
 
 			// view menu sub-items
@@ -56,9 +60,28 @@ namespace uw_edit.UserControls
 			viewRefreshMenu.Click += (sender, e) => MenuItemClicked?.Invoke(this, new MainMenuClickEventArgs(MainMenuOption.ViewRefresh));
 
 			viewMenu.DropDownItems.AddRange(new ToolStripItem[] { viewWrapMenu, viewRefreshMenu });
+			#endregion
+
+			#region tools menu
+			var toolsMenu = new ToolStripMenuItem("Tools");
+
+			// remove \s5 tags
+			var toolsS5Menu = new ToolStripMenuItem("Remove all \\s5 tags");
+			toolsS5Menu.Click += (sender, e) => MenuItemClicked?.Invoke(this, new MainMenuClickEventArgs(MainMenuOption.ToolsRemoveS5));
+
+			// remove trailing spaces
+			var toolsTrailingSpace = new ToolStripMenuItem("Remove trailing spaces");
+			toolsTrailingSpace.Click += (sender, e) => MenuItemClicked?.Invoke(this, new MainMenuClickEventArgs(MainMenuOption.ToolsRemoveTrailingSpace));
+
+			// remove trailing spaces
+			var toolsBlankLines = new ToolStripMenuItem("Remove blank lines");
+			toolsBlankLines.Click += (sender, e) => MenuItemClicked?.Invoke(this, new MainMenuClickEventArgs(MainMenuOption.ToolsRemoveBlankLines));
+
+			toolsMenu.DropDownItems.AddRange(new ToolStripItem[] { toolsS5Menu, toolsTrailingSpace, toolsBlankLines });
+			#endregion
 
             // finalize the main menu
-            Items.AddRange(new ToolStripItem[] {fileMenu, viewMenu});
+            Items.AddRange(new ToolStripItem[] {fileMenu, viewMenu, toolsMenu});
 
             ResumeLayout(true);
         }

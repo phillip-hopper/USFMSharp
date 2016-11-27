@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Text;
 using System.Timers;
 using System.Windows.Forms;
 using uw_edit.UserControls;
@@ -16,13 +17,19 @@ namespace uw_edit.Views
 		public event EventHandler<SelectionChangedEventArgs> SelectionChanged;
 		public event EventHandler<FileLoadedEventArgs> FileLoaded;
 
-		public RichTextBox RichText { get; private set; }
-		public PictureBox RichTextImage { get; private set; }
-		public ListView ErrorList { get; private set; }
+		public RichTextBox RichText { get; }
+		public PictureBox RichTextImage { get; }
+		public ListView ErrorList { get; }
+		public MainViewStrip ToolStrip { get; }
+		public MainViewMenu MenuStrip { get; }
 
         private string _fileToOpen;
+		private string _currentFileName;
         private System.Timers.Timer _timer;
-		private BackgroundWorker _backgroundWorker = new BackgroundWorker();
+		private readonly BackgroundWorker _backgroundWorker = new BackgroundWorker();
+		private bool _loaded;
+		private bool _needsSaved;
+		private readonly UTF8Encoding _utf8NoBOM = new UTF8Encoding(false);
 
 		public MainViewModel()
 		{
@@ -35,12 +42,20 @@ namespace uw_edit.Views
 			{
 				View = View.Details,
 				Dock = DockStyle.Fill,
-				FullRowSelect = true
+				FullRowSelect = true,
+				HideSelection = false
 			};
 			ErrorList.Columns.Add("Line #", 80, HorizontalAlignment.Left);
-			ErrorList.Columns.Add("Text of the error", 200, HorizontalAlignment.Left);
+			ErrorList.Columns.Add("Text", 120, HorizontalAlignment.Left);
+			ErrorList.Columns.Add("Description", 200, HorizontalAlignment.Left);
 			ErrorList.Resize += HandleErrorListResize;
 			ErrorList.MouseDoubleClick += HandleErrorListMouseDoubleClick;
+
+			ToolStrip = new MainViewStrip();
+			ToolStrip.StripItemClicked += (sender, e) => StripItemClicked(e);
+
+			MenuStrip = new MainViewMenu { Dock = DockStyle.Top };
+			MenuStrip.MenuItemClicked += (sender, e) => MenuItemClicked(e);
 
 			_backgroundWorker.DoWork += HandleBackgroundWorkerDoWork;
 		}
@@ -64,21 +79,44 @@ namespace uw_edit.Views
             if (string.IsNullOrEmpty(FileToOpen))
                 FileToOpen = Path.Combine(Program.GetResourcesDirectory(), "usfm_template.usfm");
 
-			if (!string.IsNullOrEmpty(FileToOpen))
-			{
-				RichText.Visible = false;
-				TextTools.SetUsfmFromFile(RichText, FileToOpen);
-				RichText.SelectionStart = 0;
-				RichText.SelectionLength = RichText.Text.Length;
-				RichText.SelectionFont = Program.GetTextFont();
-				RichText.SelectionLength = 0;
-				RichText.WordWrap = false;
-				TextTools.MarkupUSFM(RichText);
-				RichText.Visible = true;
-				FileLoaded?.Invoke(this, new FileLoadedEventArgs(FileToOpen));
-				FileToOpen = string.Empty;
-				EnableTimer();
-			}
+            if (string.IsNullOrEmpty(FileToOpen)) return;
+
+            Application.UseWaitCursor = true;
+            Application.DoEvents();
+
+            try
+            {
+                if (_timer != null)
+                    _timer.Enabled = false;
+                _loaded = false;
+
+                RichText.Visible = false;
+                ErrorList.Items.Clear();
+                ErrorList.Enabled = false;
+                Application.DoEvents();
+                TextTools.SetUsfmFromFile(RichText, FileToOpen);
+                RichText.SelectionStart = 0;
+                RichText.SelectionLength = RichText.Text.Length;
+                RichText.SelectionFont = Program.GetTextFont();
+                RichText.SelectionLength = 0;
+                RichText.WordWrap = false;
+                TextTools.MarkupUSFM(RichText);
+                _backgroundWorker.RunWorkerAsync();
+                RichText.Visible = true;
+
+                // if this is a new USFM file, forget the name
+                _currentFileName = FileToOpen.EndsWith("usfm_template.usfm", StringComparison.Ordinal) ? string.Empty : FileToOpen;
+
+                FileLoaded?.Invoke(this, new FileLoadedEventArgs(_currentFileName));
+
+                FileToOpen = string.Empty;
+                ToolStrip.SaveButton.Enabled = false;
+                EnableTimer();
+            }
+            finally
+            {
+                Application.UseWaitCursor = false;
+            }
         }
 
 		private void EnableTimer()
@@ -87,7 +125,10 @@ namespace uw_edit.Views
 			{
 				_timer = new System.Timers.Timer(2000) { AutoReset = false };
 				_timer.Elapsed += HandleTimerOnElapsed;
+				_timer.Enabled = false;
 			}
+
+			_loaded = true;
 		}
 
 		private void SelectFileToOpen()
@@ -105,6 +146,28 @@ namespace uw_edit.Views
 			}
 		}
 
+		private void SaveFile()
+		{
+			// has the current document previously been saved?
+			if (!string.IsNullOrEmpty(_currentFileName))
+			{
+				File.WriteAllText(_currentFileName, RichText.Text.Replace("\n", Environment.NewLine), _utf8NoBOM);
+				NeedsSaved = false;
+				return;
+			}
+
+			using (var sfd = new SaveFileDialog())
+			{
+				sfd.Filter = "USFM files (*.usfm)|*.usfm|All files (*.*)|*.*";
+
+				if (sfd.ShowDialog() != DialogResult.OK)
+					return;
+
+				File.WriteAllText(sfd.FileName, RichText.Text.Replace("\n", Environment.NewLine), _utf8NoBOM);
+				NeedsSaved = false;
+			}
+		}
+
 		private void DisplayErrors(TagErrors tagErrors)
 		{
 
@@ -112,8 +175,68 @@ namespace uw_edit.Views
 
 			foreach (var error in tagErrors.Errors)
 			{
-				ErrorList.Items.Add(new ListViewItem(new[] { error.LineNumber.ToString(), error.HintText }));
+				ErrorList.Items.Add(new ListViewItem(new[] { error.LineNumber.ToString(), error.HintText, error.Description }));
 			}
+
+			ErrorList.Enabled = true;
+		}
+
+		private bool NeedsSaved
+		{
+			get
+			{
+				return _needsSaved;
+			}
+			set
+			{
+				_needsSaved = value;
+				ToolStrip.SaveButton.Enabled = value;
+			}
+		}
+
+		public bool FreeToOpen()
+		{
+			if (!NeedsSaved)
+				return true;
+
+			string msg;
+
+			// ReSharper disable once ConvertIfStatementToConditionalTernaryExpression
+			if (!string.IsNullOrEmpty(_currentFileName))
+			{
+				msg = string.Format("Save changes to file {0} before closing?", Path.GetFileName(_currentFileName));
+			}
+			else
+			{
+				msg = "Save changes to new document before closing?";
+			}
+
+			using (var dlg = new SaveChangesDialog(msg))
+			{
+				var result = dlg.ShowDialog(Program.MainView);
+
+				// ReSharper disable once SwitchStatementMissingSomeCases
+				switch (result)
+				{
+					case DialogResult.OK:
+						// save
+						SaveFile();
+						break;
+
+					case DialogResult.Cancel:
+						// cancel
+						return false;
+
+					case DialogResult.Ignore:
+						// do not save
+						break;
+
+					default:
+						throw new NotSupportedException(string.Format("The value {0} is not supported.", result));
+				}
+			}
+
+			return true;
 		}
 
 		#region Event Handlers
@@ -123,16 +246,23 @@ namespace uw_edit.Views
 			switch (eventArgs.ItemClicked)
 			{
 				case MainViewMenu.MainMenuOption.FileNew:
+					if (!FreeToOpen()) return;
+					FileToOpen = string.Empty;
+					LoadUsfmFile();
+					NeedsSaved = true;
 					return;
 					
 				case MainViewMenu.MainMenuOption.FileOpen:
-					SelectFileToOpen();
+					if (FreeToOpen())
+						SelectFileToOpen();
 					return;
 					
 				case MainViewMenu.MainMenuOption.FileSave:
+					SaveFile();
 					return;
 					
 				case MainViewMenu.MainMenuOption.FileExit:
+					if (!FreeToOpen()) return;
 					ExitProgram?.Invoke(this, eventArgs);
 					return;
 
@@ -149,7 +279,18 @@ namespace uw_edit.Views
 						_timer.Enabled = false;
 
 					DisplayErrors(TextTools.GetErrors(RichText));
+					return;
 
+				case MainViewMenu.MainMenuOption.ToolsRemoveS5:
+					TextTools.RemoveS5Tags(RichText);
+					return;
+
+				case MainViewMenu.MainMenuOption.ToolsRemoveTrailingSpace:
+					TextTools.RemoveTrailingWhitespace(RichText);
+					return;
+
+				case MainViewMenu.MainMenuOption.ToolsRemoveBlankLines:
+					TextTools.RemoveBlankLines(RichText);
 					return;
 			}
 		}
@@ -158,20 +299,9 @@ namespace uw_edit.Views
 		{
 			switch (eventArgs.ItemClicked)
 			{
-				case MainViewStrip.MainStripOption.Chapter:
-					//Browser.InsertTag("\\c ", " ");
+				case MainViewStrip.MainStripOption.Save:
+					SaveFile();
 					break;
-
-				case MainViewStrip.MainStripOption.Verse:
-					//Browser.InsertText("\\v ");
-					break;
-					
-				case MainViewStrip.MainStripOption.Paragraph:
-					//ExitProgram?.Invoke(this, eventArgs);
-					//nsIDOMWindowUtils utils = Xpcom.QueryInterface<nsIDOMWindowUtils>(Browser.WebBrowser.Window.DomWindow);
-					//nsIDOMWindowUtils utils = Xpcom.QueryInterface<nsIDOMWindowUtils>(Browser.WebBrowser.Window.DomWindow);
-					//Browser.WebBrowser.Window.WindowUtils.SendKeyEvent("keypress", 0, 102, 0, false);
-					return;
 			}
 		}
 
@@ -214,12 +344,16 @@ namespace uw_edit.Views
 
 		private void HandleRichTextOnTextChanged(object sender, EventArgs eventArgs)
         {
+			if (!_loaded) return;
+
 			if (_timer == null) return;
 
 			if (_timer.Enabled)
             {
                 _timer.Enabled = false;
             }
+
+			NeedsSaved = true;
 
             _timer.Enabled = true;
         }
@@ -257,10 +391,13 @@ namespace uw_edit.Views
 			if (lineNumber > RichText.Lines.Length)
 				return;
 
+			// get the position of the selected item
+			var lineStart = RichText.GetFirstCharIndexFromLine(lineNumber);
 			var line = RichText.Lines[lineNumber];
-			var pos = RichText.Find(line);
-			RichText.SelectionStart = pos;
-			RichText.ScrollToCaret();
+			var pos = line.IndexOf(ErrorList.SelectedItems[0].SubItems[1].Text, StringComparison.Ordinal);
+			RichText.SelectionStart = lineStart + pos;
+			RichText.SelectionLength = ErrorList.SelectedItems[0].SubItems[1].Text.Length;
+
 			RichText.Focus();
 		}
 
@@ -268,7 +405,7 @@ namespace uw_edit.Views
 		{
 			if (ErrorList.Width > 200)
 			{
-				ErrorList.Columns[1].Width = ErrorList.Width - ErrorList.Columns[0].Width - 22;
+				ErrorList.Columns[2].Width = ErrorList.Width - ErrorList.Columns[0].Width - ErrorList.Columns[1].Width - 22;
 			}
 		}
 
@@ -291,9 +428,9 @@ namespace uw_edit.Views
 	public class FileLoadedEventArgs : EventArgs
 	{
 		public string FullPath;
-		public string FileName { get { return Path.GetFileName(FullPath); } }
+		public string FileName => Path.GetFileName(FullPath);
 
-		public FileLoadedEventArgs(string fullPath)
+	    public FileLoadedEventArgs(string fullPath)
 		{
 			FullPath = fullPath;
 		}
