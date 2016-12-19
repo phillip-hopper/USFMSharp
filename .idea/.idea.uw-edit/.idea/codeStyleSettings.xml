@@ -2,8 +2,14 @@
 <project version="4">
   <component name="RiderProjectCodeStyleSettingsManager">
     <option name="PER_PROJECT_SETTINGS">
-      <value />
+      <value>
+        <codeStyleSettings language="C#">
+          <indentOptions>
+            <option name="USE_TAB_CHARACTER" value="true" />
+          </indentOptions>
+        </codeStyleSettings>
+      </value>
     </option>
-    <option name="PREFERRED_PROJECT_CODE_STYLE" value="Default (1)" />
+    <option name="PREFERRED_PROJECT_CODE_STYLE" value="Phil" />
   </component>
 </project>
