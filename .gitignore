@@ -3,7 +3,7 @@
 
 # settings for this project
 Firefox/
-uw-edit/packages.config
+USFMSharp/packages.config
 
 # User-specific files
 *.suo
